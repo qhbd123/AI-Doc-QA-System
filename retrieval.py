@@ -3,6 +3,7 @@ import jieba
 from typing import List, Optional, Tuple, Dict
 from rank_bm25 import BM25Okapi
 
+
 NO_CONTEXT_MSG = "无相关参考资料"
 
 def _tokenize(text: str) -> List[str]:
