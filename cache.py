@@ -5,6 +5,7 @@ import time
 from typing import Optional, List, Dict
 from dotenv import load_dotenv
 
+
 # 从项目根目录的 .env 文件中读取环境变量，并将其加载到 Python 的 os.environ 字典中,后续代码就可以通过 os.getenv() 来获取配置信息
 load_dotenv()
 
