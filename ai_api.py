@@ -353,3 +353,4 @@ def get_provider_config_status(provider: str) -> dict:
         "has_api_url": bool(cfg.get("api_url")),
         "has_model": bool(cfg.get("model")),
     }
+
