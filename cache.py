@@ -190,3 +190,4 @@ def clear_qa_cache() -> int:
 # 将 CacheClient 实例内部的原始 Redis 客户端对象（即 _cache_client.client）导出为模块级变量 redis_client
 # 可以直接使用 redis_client 执行原生 Redis 命令，而无需重新创建连接
 redis_client = _cache_client.client
+
