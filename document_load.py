@@ -6,6 +6,7 @@ from PyPDF2 import PdfReader
 from docx import Document
 import re
 
+
 # 可选：用于解析 HTML 的库（如果未安装，请运行 pip install beautifulsoup4）
 try:
     from bs4 import BeautifulSoup
