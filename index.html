@@ -1,0 +1,1019 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI智能文档问答系统</title>
+    <style>
+        /* ---------- CSS 变量（默认浅色主题）---------- */
+        :root {
+            --bg-body: #f5f7fb;
+            --container-bg: white;
+            --sidebar-bg: #f8f9fc;
+            --sidebar-border: #e9ecef;
+            --card-bg: white;
+            --card-border: #e9ecef;
+            --text-primary: #1f2937;
+            --text-secondary: #4b5563;
+            --text-muted: #6c757d;
+            --accent-color: #3b82f6;
+            --accent-hover: #2563eb;
+            --danger-color: #dc2626;
+            --danger-hover: #b91c1c;
+            --border-light: #e9ecef;
+            --badge-doc-bg: #dbeafe;
+            --badge-doc-color: #1e40af;
+            --badge-model-bg: #fef9c3;
+            --badge-model-color: #854d0e;
+            --badge-cache-bg: #d1fae5;
+            --badge-cache-color: #065f46;
+            --badge-doc-source-bg: #e0e7ff;
+            --badge-doc-source-color: #3730a3;
+            --user-msg-bg: #3b82f6;
+            --user-msg-color: white;
+            --assistant-msg-bg: #f1f5f9;
+            --assistant-msg-color: #1f2937;
+            --input-border: #cbd5e1;
+            --input-focus: #3b82f6;
+        }
+
+        /* 深色主题 */
+        .theme-dark {
+            --bg-body: #0f172a;
+            --container-bg: #1e293b;
+            --sidebar-bg: #0f172a;
+            --sidebar-border: #334155;
+            --card-bg: #1e293b;
+            --card-border: #334155;
+            --text-primary: #f1f5f9;
+            --text-secondary: #cbd5e1;
+            --text-muted: #94a3b8;
+            --accent-color: #60a5fa;
+            --accent-hover: #3b82f6;
+            --danger-color: #f87171;
+            --danger-hover: #ef4444;
+            --border-light: #334155;
+            --badge-doc-bg: #1e3a8a;
+            --badge-doc-color: #bfdbfe;
+            --badge-model-bg: #713f12;
+            --badge-model-color: #fef08a;
+            --badge-cache-bg: #064e3b;
+            --badge-cache-color: #a7f3d0;
+            --badge-doc-source-bg: #1e1b4b;
+            --badge-doc-source-color: #c7d2fe;
+            --user-msg-bg: #3b82f6;
+            --user-msg-color: white;
+            --assistant-msg-bg: #334155;
+            --assistant-msg-color: #e2e8f0;
+            --input-border: #475569;
+            --input-focus: #60a5fa;
+        }
+
+        /* 蓝灰色主题 */
+        .theme-slate {
+            --bg-body: #eef2ff;
+            --container-bg: #ffffff;
+            --sidebar-bg: #f8fafc;
+            --sidebar-border: #e2e8f0;
+            --card-bg: white;
+            --card-border: #e2e8f0;
+            --text-primary: #1e293b;
+            --text-secondary: #475569;
+            --text-muted: #64748b;
+            --accent-color: #6366f1;
+            --accent-hover: #4f46e5;
+            --danger-color: #dc2626;
+            --danger-hover: #b91c1c;
+            --border-light: #e2e8f0;
+            --badge-doc-bg: #e0e7ff;
+            --badge-doc-color: #4338ca;
+            --badge-model-bg: #fef3c7;
+            --badge-model-color: #b45309;
+            --badge-cache-bg: #dcfce7;
+            --badge-cache-color: #166534;
+            --badge-doc-source-bg: #e0e7ff;
+            --badge-doc-source-color: #3730a3;
+            --user-msg-bg: #6366f1;
+            --user-msg-color: white;
+            --assistant-msg-bg: #f1f5f9;
+            --assistant-msg-color: #1e293b;
+            --input-border: #cbd5e1;
+            --input-focus: #6366f1;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: system-ui, -apple-system, 'Segoe UI', Roboto, 'Microsoft YaHei', sans-serif;
+            background: var(--bg-body);
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            transition: background 0.2s;
+        }
+
+        .container {
+            width: 1200px;
+            max-width: 95vw;
+            height: 85vh;
+            background: var(--container-bg);
+            border-radius: 24px;
+            box-shadow: 0 20px 35px -10px rgba(0, 0, 0, 0.1);
+            display: flex;
+            overflow: hidden;
+            transition: background 0.2s;
+        }
+
+        .sidebar {
+            width: 280px;
+            background: var(--sidebar-bg);
+            border-right: 1px solid var(--sidebar-border);
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            overflow-y: auto;
+        }
+
+        .upload-area {
+            background: var(--card-bg);
+            border: 2px dashed var(--input-border);
+            border-radius: 16px;
+            padding: 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s;
+            flex-shrink: 0;
+            color: var(--text-secondary);
+        }
+
+        .upload-area:hover {
+            border-color: var(--accent-color);
+            background: var(--badge-doc-source-bg);
+        }
+
+        .upload-icon {
+            font-size: 36px;
+            margin-bottom: 8px;
+        }
+
+        .upload-text {
+            font-size: 14px;
+        }
+
+        .doc-selector {
+            background: var(--card-bg);
+            border-radius: 16px;
+            padding: 12px;
+            border: 1px solid var(--card-border);
+            flex-shrink: 0;
+        }
+
+        .doc-selector label {
+            font-size: 13px;
+            font-weight: 500;
+            display: block;
+            margin-bottom: 8px;
+            color: var(--text-primary);
+        }
+
+        .select-actions {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 8px;
+        }
+
+        .select-actions button {
+            flex: 1;
+            background: #e2e8f0;
+            border: none;
+            border-radius: 20px;
+            padding: 4px 8px;
+            font-size: 11px;
+            cursor: pointer;
+            color: var(--text-primary);
+        }
+
+        .select-actions button:hover {
+            background: #cbd5e1;
+        }
+
+        .doc-checkbox-list {
+            max-height: 240px;
+            overflow-y: auto;
+            font-size: 12px;
+        }
+
+        .doc-checkbox-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 0;
+            border-bottom: 1px solid var(--border-light);
+            color: var(--text-primary);
+        }
+
+        .doc-checkbox-item input {
+            margin: 0;
+        }
+
+        .doc-checkbox-item span {
+            flex: 1;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .stats {
+            background: var(--card-bg);
+            border-radius: 16px;
+            padding: 12px;
+            font-size: 13px;
+            color: var(--text-primary);
+            border: 1px solid var(--card-border);
+            flex-shrink: 0;
+        }
+
+        .model-selector {
+            background: var(--card-bg);
+            border-radius: 16px;
+            padding: 12px;
+            border: 1px solid var(--card-border);
+            flex-shrink: 0;
+        }
+
+        .model-selector label {
+            font-size: 13px;
+            font-weight: 500;
+            display: block;
+            margin-bottom: 8px;
+            color: var(--text-primary);
+        }
+
+        .model-selector select {
+            width: 100%;
+            padding: 8px 10px;
+            border-radius: 20px;
+            border: 1px solid var(--input-border);
+            font-size: 13px;
+            background: var(--card-bg);
+            color: var(--text-primary);
+            cursor: pointer;
+        }
+
+        .current-model {
+            font-size: 12px;
+            margin-top: 8px;
+            color: var(--text-secondary);
+            text-align: center;
+        }
+
+        .clear-btn {
+            background: #fee2e2;
+            color: var(--danger-color);
+            border: none;
+            border-radius: 40px;
+            padding: 8px 12px;
+            font-size: 13px;
+            cursor: pointer;
+            width: 100%;
+            font-weight: 500;
+            flex-shrink: 0;
+        }
+
+        .clear-btn:hover {
+            background: #fecaca;
+        }
+
+        .clear-cache-btn {
+            background: #e2e8f0;
+            color: var(--text-primary);
+        }
+
+        .clear-cache-btn:hover {
+            background: #cbd5e1;
+        }
+
+        .theme-switcher {
+            display: flex;
+            gap: 8px;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .theme-btn {
+            flex: 1;
+            background: var(--card-bg);
+            border: 1px solid var(--input-border);
+            border-radius: 20px;
+            padding: 6px 10px;
+            font-size: 12px;
+            cursor: pointer;
+            color: var(--text-primary);
+            transition: all 0.2s;
+        }
+
+        .theme-btn:hover {
+            background: var(--accent-color);
+            color: white;
+            border-color: var(--accent-color);
+        }
+
+        .theme-btn.active {
+            background: var(--accent-color);
+            color: white;
+            border-color: var(--accent-color);
+        }
+
+        .chat-area {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background: var(--container-bg);
+        }
+
+        .chat-header {
+            padding: 18px 24px;
+            border-bottom: 1px solid var(--sidebar-border);
+            font-weight: 600;
+            font-size: 18px;
+            color: var(--text-primary);
+            background: var(--container-bg);
+        }
+
+        .messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px 24px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .message {
+            display: flex;
+            gap: 12px;
+            max-width: 80%;
+            min-width: 200px;
+        }
+
+        .message.user {
+            align-self: flex-end;
+            flex-direction: row-reverse;
+        }
+
+        .avatar {
+            width: 36px;
+            height: 36px;
+            background: #e2e8f0;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            flex-shrink: 0;
+        }
+
+        .message.user .avatar {
+            background: var(--accent-color);
+            color: white;
+        }
+
+        .bubble {
+            background: var(--assistant-msg-bg);
+            padding: 12px 16px;
+            border-radius: 18px;
+            font-size: 14px;
+            line-height: 1.5;
+            word-break: break-word;
+            white-space: pre-wrap;
+            max-width: 500px;
+            color: var(--assistant-msg-color);
+        }
+
+        .message.user .bubble {
+            background: var(--user-msg-bg);
+            color: var(--user-msg-color);
+        }
+
+        .badge-container {
+            display: flex;
+            justify-content: flex-end;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin-top: 4px;
+        }
+
+        .badge {
+            display: inline-block;
+            font-size: 10px;
+            padding: 2px 8px;
+            border-radius: 12px;
+            white-space: nowrap;
+        }
+
+        .badge.source-document {
+            background: var(--badge-doc-bg);
+            color: var(--badge-doc-color);
+        }
+
+        .badge.source-model {
+            background: var(--badge-model-bg);
+            color: var(--badge-model-color);
+        }
+
+        .badge.cache-hit {
+            background: var(--badge-cache-bg);
+            color: var(--badge-cache-color);
+        }
+
+        .badge.doc-source {
+            background: var(--badge-doc-source-bg);
+            color: var(--badge-doc-source-color);
+        }
+
+        .input-area {
+            padding: 16px 24px;
+            border-top: 1px solid var(--sidebar-border);
+            display: flex;
+            gap: 12px;
+            background: var(--container-bg);
+        }
+
+        .input-area input {
+            flex: 1;
+            padding: 12px 16px;
+            border: 1px solid var(--input-border);
+            border-radius: 40px;
+            font-size: 14px;
+            outline: none;
+            background: var(--card-bg);
+            color: var(--text-primary);
+        }
+
+        .input-area input:focus {
+            border-color: var(--input-focus);
+            box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.2);
+        }
+
+        .input-area button {
+            background: var(--accent-color);
+            border: none;
+            color: white;
+            padding: 0 20px;
+            border-radius: 40px;
+            font-weight: 500;
+            cursor: pointer;
+        }
+
+        .input-area button:disabled {
+            background: #94a3b8;
+            cursor: not-allowed;
+        }
+
+        .stop-btn {
+            background: #ef4444;
+        }
+
+        .stop-btn:hover {
+            background: #dc2626;
+        }
+
+        .loading {
+            color: var(--text-muted);
+            font-style: italic;
+            padding: 8px 16px;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="sidebar">
+        <div class="theme-switcher">
+            <button class="theme-btn" data-theme="light">☀️ 浅色</button>
+            <button class="theme-btn" data-theme="dark">🌙 深色</button>
+            <button class="theme-btn" data-theme="slate">🎨 蓝灰</button>
+        </div>
+
+        <div class="upload-area" id="uploadArea">
+            <div class="upload-icon">📄</div>
+            <div class="upload-text">点击或拖拽上传文档<br>(PDF, DOCX, TXT, MD, HTML, ≤10MB，支持多选)</div>
+            <input type="file" id="fileInput" accept=".pdf,.docx,.txt,.md,.html" multiple style="display: none;">
+        </div>
+
+        <div class="doc-selector">
+            <label>📑 指定检索文档（点击复选框选择，点击🗑️删除）</label>
+            <div class="select-actions">
+                <button id="selectAllBtn">全选</button>
+                <button id="deselectAllBtn">全不选</button>
+            </div>
+            <div id="docCheckboxList" class="doc-checkbox-list">
+                <div style="color: var(--text-muted); text-align: center;">暂无文档</div>
+            </div>
+        </div>
+
+        <div class="model-selector">
+            <label>🤖 大模型切换（即时生效）</label>
+            <select id="modelSelect">
+                <option value="doubao">豆包 (Doubao)</option>
+                <option value="deepseek">DeepSeek</option>
+                <option value="zhipu">智谱清言 (GLM)</option>
+            </select>
+            <div class="current-model" id="currentModelLabel">当前模型: --</div>
+        </div>
+
+        <button class="clear-btn" id="clearSessionBtn" style="background: #e2e8f0; color: var(--text-primary);">💬 清空对话</button>
+
+        <div class="stats" id="stats">
+            📊 知识库片段: <span id="chunkCount">0</span><br>
+            💾 缓存状态: <span id="redisStatus">未知</span>
+        </div>
+
+        <!-- 新增清除缓存按钮 -->
+        <button class="clear-btn clear-cache-btn" id="clearCacheBtn">🧹 清除缓存</button>
+        <button class="clear-btn" id="clearBtn">🗑️ 清空所有文档</button>
+    </div>
+    <div class="chat-area">
+        <div class="chat-header">💬 AI 智能问答</div>
+        <div class="messages" id="messages">
+            <div class="message assistant">
+                <div class="avatar">🤖</div>
+                <div class="bubble">你好！请上传文档，然后选择要检索的文档（默认全选所有文档），开始提问～</div>
+            </div>
+        </div>
+        <div class="input-area">
+            <input type="text" id="questionInput" placeholder="输入你的问题..."/>
+            <button id="sendBtn">发送</button>
+            <button id="stopBtn" class="stop-btn" style="display: none;">⏹️ 停止</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    const API_BASE = '';
+    const MAX_FILE_SIZE = 10 * 1024 * 1024;
+
+    // ---------- 会话 ID 管理（多轮对话）----------
+    let sessionId = localStorage.getItem('chat_session_id');
+    if (!sessionId) {
+        sessionId = crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36);
+        localStorage.setItem('chat_session_id', sessionId);
+        console.log('[Session] 初始化新会话:', sessionId);
+    } else {
+        console.log('[Session] 加载已有会话:', sessionId);
+    }
+
+    let documents = [];
+    let selectedDocIds = new Set();
+    let currentController = null;   // 用于中止请求
+
+    // DOM 元素
+    const uploadArea = document.getElementById('uploadArea');
+    const fileInput = document.getElementById('fileInput');
+    const messagesDiv = document.getElementById('messages');
+    const questionInput = document.getElementById('questionInput');
+    const sendBtn = document.getElementById('sendBtn');
+    const stopBtn = document.getElementById('stopBtn');
+    const clearBtn = document.getElementById('clearBtn');
+    const clearCacheBtn = document.getElementById('clearCacheBtn');
+    const chunkCountSpan = document.getElementById('chunkCount');
+    const redisStatusSpan = document.getElementById('redisStatus');
+    const modelSelect = document.getElementById('modelSelect');
+    const currentModelLabel = document.getElementById('currentModelLabel');
+    const docCheckboxList = document.getElementById('docCheckboxList');
+    const selectAllBtn = document.getElementById('selectAllBtn');
+    const deselectAllBtn = document.getElementById('deselectAllBtn');
+    const clearSessionBtn = document.getElementById('clearSessionBtn');
+
+    // 主题切换
+    function setTheme(themeName) {
+        document.body.classList.remove('theme-dark', 'theme-slate');
+        if (themeName === 'dark') document.body.classList.add('theme-dark');
+        else if (themeName === 'slate') document.body.classList.add('theme-slate');
+        localStorage.setItem('ai_qa_theme', themeName);
+        document.querySelectorAll('.theme-btn').forEach(btn => {
+            if (btn.dataset.theme === themeName) btn.classList.add('active');
+            else btn.classList.remove('active');
+        });
+    }
+
+    function initTheme() {
+        const saved = localStorage.getItem('ai_qa_theme');
+        if (saved && (saved === 'light' || saved === 'dark' || saved === 'slate')) setTheme(saved);
+        else setTheme('light');
+    }
+
+    document.querySelectorAll('.theme-btn').forEach(btn => {
+        btn.addEventListener('click', () => setTheme(btn.dataset.theme));
+    });
+
+    // 模型切换
+    async function loadCurrentModel() {
+        try {
+            const resp = await fetch(`${API_BASE}/current_model`);
+            const data = await resp.json();
+            if (data.code === 200) {
+                currentModelLabel.textContent = `当前模型: ${data.current}`;
+                if (modelSelect.value !== data.current) modelSelect.value = data.current;
+            } else currentModelLabel.textContent = `当前模型: 未知`;
+        } catch (e) {
+            console.error(e);
+            currentModelLabel.textContent = `当前模型: 无法连接`;
+        }
+    }
+
+    async function switchModel(provider) {
+        if (modelSelect.disabled) return;
+        modelSelect.disabled = true;
+        try {
+            const resp = await fetch(`${API_BASE}/switch_model?provider=${encodeURIComponent(provider)}`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'}
+            });
+            const data = await resp.json();
+            if (data.code === 200) {
+                addMessage('assistant', `✅ 已切换大模型至: ${provider}`, {fromCache: false});
+                await loadCurrentModel();
+            } else addMessage('assistant', `❌ 切换模型失败: ${data.msg || '请检查配置'}`, {fromCache: false});
+        } catch (err) {
+            console.error(err);
+            addMessage('assistant', `❌ 切换模型网络错误: ${err.message}`, {fromCache: false});
+        } finally {
+            modelSelect.disabled = false;
+        }
+    }
+
+    modelSelect.addEventListener('change', () => switchModel(modelSelect.value));
+
+    // 消息显示
+    function addMessage(role, content, options = {}) {
+        const {fromCache = false, source = null, sources = []} = options;
+        const msgDiv = document.createElement('div');
+        msgDiv.className = `message ${role}`;
+        const avatar = document.createElement('div');
+        avatar.className = 'avatar';
+        avatar.textContent = role === 'user' ? '👤' : '🤖';
+        msgDiv.appendChild(avatar);
+        const wrapper = document.createElement('div');
+        wrapper.style.display = 'flex';
+        wrapper.style.flexDirection = 'column';
+        const bubble = document.createElement('div');
+        bubble.className = 'bubble';
+        bubble.textContent = content;
+        wrapper.appendChild(bubble);
+        const badgeContainer = document.createElement('div');
+        badgeContainer.className = 'badge-container';
+        if (role === 'assistant') {
+            if (source === 'document' && sources.length > 0) {
+                sources.forEach(docName => {
+                    const b = document.createElement('span');
+                    b.className = 'badge doc-source';
+                    b.textContent = `📄 ${docName}`;
+                    badgeContainer.appendChild(b);
+                });
+            } else if (source === 'model') {
+                const b = document.createElement('span');
+                b.className = 'badge source-model';
+                b.textContent = '🤖 大模型知识';
+                badgeContainer.appendChild(b);
+            }
+            if (fromCache) {
+                const b = document.createElement('span');
+                b.className = 'badge cache-hit';
+                b.textContent = '⚡ 来自缓存';
+                badgeContainer.appendChild(b);
+            }
+        }
+        if (badgeContainer.children.length > 0) wrapper.appendChild(badgeContainer);
+        msgDiv.appendChild(wrapper);
+        messagesDiv.appendChild(msgDiv);
+        messagesDiv.scrollTop = messagesDiv.scrollHeight;
+    }
+
+    // 加载状态控制
+    function showLoading() {
+        sendBtn.disabled = true;
+        stopBtn.style.display = 'inline-block';
+        stopBtn.disabled = false;
+        const loadingDiv = document.createElement('div');
+        loadingDiv.className = 'loading';
+        loadingDiv.id = 'loadingMsg';
+        loadingDiv.textContent = '🤔 思考中...';
+        messagesDiv.appendChild(loadingDiv);
+        messagesDiv.scrollTop = messagesDiv.scrollHeight;
+    }
+
+    function hideLoading() {
+        sendBtn.disabled = false;
+        stopBtn.disabled = true;
+        stopBtn.style.display = 'none';
+        const loading = document.getElementById('loadingMsg');
+        if (loading) loading.remove();
+    }
+
+    // 停止生成（仅由停止按钮触发）
+    function stopGeneration() {
+        if (currentController) {
+            currentController.abort();
+            currentController = null;
+            hideLoading();
+            addMessage('assistant', '⏸️ 已停止生成。', {fromCache: false});
+        }
+    }
+
+    stopBtn.addEventListener('click', stopGeneration);
+
+    // 文档管理
+    async function fetchDocuments() {
+        try {
+            const resp = await fetch(`${API_BASE}/documents`);
+            const data = await resp.json();
+            if (data.code === 200) {
+                documents = data.documents;
+                renderDocCheckboxes();
+            }
+        } catch (e) {
+            console.error(e);
+        }
+    }
+
+    function renderDocCheckboxes() {
+        if (documents.length === 0) {
+            docCheckboxList.innerHTML = '<div style="color: var(--text-muted); text-align: center;">暂无文档</div>';
+            return;
+        }
+        const newSelected = new Set();
+        for (const doc of documents) if (selectedDocIds.has(doc.doc_id)) newSelected.add(doc.doc_id);
+        selectedDocIds = newSelected;
+        const html = documents.map(doc => `
+            <div class="doc-checkbox-item" data-doc-id="${doc.doc_id}">
+                <input type="checkbox" id="doc_${doc.doc_id}" value="${doc.doc_id}" ${selectedDocIds.has(doc.doc_id) ? 'checked' : ''}>
+                <label for="doc_${doc.doc_id}" style="flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="${doc.name}">${doc.name}</label>
+                <span style="font-size:10px; color: var(--text-muted); margin-right: 8px;">${doc.chunks}段</span>
+                <button class="delete-doc-btn" data-id="${doc.doc_id}" style="background:#fee2e2; border:none; border-radius:12px; padding:2px 6px; cursor:pointer; font-size:11px;">🗑️</button>
+            </div>
+        `).join('');
+        docCheckboxList.innerHTML = html;
+        documents.forEach(doc => {
+            const cb = document.getElementById(`doc_${doc.doc_id}`);
+            if (cb) cb.addEventListener('change', (e) => {
+                if (e.target.checked) selectedDocIds.add(doc.doc_id);
+                else selectedDocIds.delete(doc.doc_id);
+            });
+        });
+        document.querySelectorAll('.delete-doc-btn').forEach(btn => {
+            btn.addEventListener('click', async (e) => {
+                e.stopPropagation();
+                const docId = btn.dataset.id;
+                if (confirm('确定要删除该文档吗？')) await deleteDocument(docId);
+            });
+        });
+    }
+
+    async function deleteDocument(docId) {
+        try {
+            const resp = await fetch(`${API_BASE}/documents/${docId}`, {method: 'DELETE'});
+            const data = await resp.json();
+            if (data.code === 200) {
+                addMessage('assistant', `✅ 已删除文档，相关缓存已清除。`);
+                await fetchDocuments();
+                await fetchStats();
+                selectedDocIds.delete(docId);
+                renderDocCheckboxes();
+            } else addMessage('assistant', `删除失败：${data.msg}`);
+        } catch (err) {
+            console.error(err);
+            addMessage('assistant', `删除失败：${err.message}`);
+        }
+    }
+
+    function selectAllDocs() {
+        documents.forEach(doc => selectedDocIds.add(doc.doc_id));
+        renderDocCheckboxes();
+    }
+
+    function deselectAllDocs() {
+        selectedDocIds.clear();
+        renderDocCheckboxes();
+    }
+
+    selectAllBtn.addEventListener('click', selectAllDocs);
+    deselectAllBtn.addEventListener('click', deselectAllDocs);
+
+    // 上传
+    async function uploadFiles(fileList) {
+        const files = Array.from(fileList);
+        if (files.length === 0) return;
+        const formData = new FormData();
+        for (const file of files) {
+            if (file.size > MAX_FILE_SIZE) {
+                addMessage('assistant', `❌ 文件《${file.name}》超过10MB，已跳过。`);
+                continue;
+            }
+            formData.append('files', file);
+        }
+        if (formData.getAll('files').length === 0) return;
+        try {
+            const resp = await fetch(`${API_BASE}/upload`, {method: 'POST', body: formData});
+            const data = await resp.json();
+            if (data.code === 200) {
+                const names = data.uploaded.map(f => f.name).join('、');
+                addMessage('assistant', `✅ 成功上传 ${data.uploaded.length} 个文件（${names}），新增 ${data.total_chunks} 个知识片段，相关缓存已清除。`);
+                await fetchDocuments();
+                await fetchStats();
+                selectAllDocs();
+            } else addMessage('assistant', `上传失败：${data.msg}`);
+        } catch (err) {
+            console.error(err);
+            addMessage('assistant', `上传错误：${err.message}`);
+        }
+    }
+
+    // 统计
+    async function fetchStats() {
+        try {
+            const resp = await fetch(`${API_BASE}/stats`);
+            const data = await resp.json();
+            if (data.code === 200) {
+                chunkCountSpan.textContent = data.total_chunks;
+                redisStatusSpan.textContent = data.redis_available ? '✅ 已连接' : '❌ 未连接';
+            }
+        } catch (e) {
+            console.error(e);
+            redisStatusSpan.textContent = '⚠️ 无法连接';
+        }
+    }
+
+    // 清空所有文档
+    async function clearKnowledgeBase() {
+        if (!confirm('⚠️ 确认要清除所有已上传的文档及所有缓存吗？此操作不可恢复。')) return;
+        try {
+            const resp = await fetch(`${API_BASE}/clear`, {method: 'DELETE'});
+            const data = await resp.json();
+            if (data.code === 200) {
+                documents = [];
+                selectedDocIds.clear();
+                renderDocCheckboxes();
+                addMessage('assistant', '🧹 知识库已清空，所有缓存已清除。');
+                fetchStats();
+            } else addMessage('assistant', `清空失败：${data.msg}`);
+        } catch (err) {
+            console.error(err);
+            addMessage('assistant', `网络错误：${err.message}`);
+        }
+    }
+
+    // 单独清除缓存（保留文档）
+    async function clearCache() {
+        if (!confirm('确定要清除所有问答缓存吗？缓存清除后，相同问题会重新调用大模型生成答案。')) return;
+        try {
+            const resp = await fetch(`${API_BASE}/clear_cache`, {method: 'DELETE'});
+            const data = await resp.json();
+            if (data.code === 200) {
+                addMessage('assistant', `✅ ${data.msg}`);
+                // 可选：刷新统计（缓存状态不变，但可以重新获取）
+                fetchStats();
+            } else {
+                addMessage('assistant', `清除缓存失败：${data.msg}`);
+            }
+        } catch (err) {
+            console.error('[clearCache] 错误:', err);
+            addMessage('assistant', `清除缓存网络错误：${err.message}`);
+        }
+    }
+
+    clearCacheBtn.addEventListener('click', clearCache);
+
+    // 清空对话历史（并清空前端的聊天记录）
+    async function clearSession() {
+        try {
+            const resp = await fetch(`${API_BASE}/session/${sessionId}`, { method: 'DELETE' });
+            const data = await resp.json();
+            if (data.code === 200) {
+                // 清空前端的聊天消息，保留第一条欢迎消息
+                const messagesContainer = document.getElementById('messages');
+                const firstMessage = messagesContainer.querySelector('.message.assistant');
+                // 清空所有消息
+                messagesContainer.innerHTML = '';
+                if (firstMessage) {
+                    // 重新添加第一条消息（克隆以避免事件丢失）
+                    messagesContainer.appendChild(firstMessage.cloneNode(true));
+                } else {
+                    // 如果没有初始消息，添加默认欢迎语
+                    addMessage('assistant', '你好！请上传文档，然后选择要检索的文档（默认全选所有文档），开始提问～');
+                }
+                addMessage('assistant', '💬 对话历史已清空，下次提问将开始新对话。');
+                // 生成新的 sessionId
+                sessionId = crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36);
+                localStorage.setItem('chat_session_id', sessionId);
+                console.log('[Session] 清空后新建会话:', sessionId);
+                // 可选：如果希望清空对话时同时清除缓存，取消注释下一行
+                // await clearCache();
+            } else {
+                addMessage('assistant', `清空对话失败：${data.msg}`);
+            }
+        } catch (err) {
+            console.error(err);
+            addMessage('assistant', `清空对话错误：${err.message}`);
+        }
+    }
+
+    clearSessionBtn.addEventListener('click', clearSession);
+
+    // 提问（支持中止，且必须携带 session_id）
+    async function askQuestion(question) {
+        if (!question.trim()) return;
+        if (currentController) {
+            currentController.abort();
+            currentController = null;
+        }
+        addMessage('user', question);
+        questionInput.value = '';
+        showLoading();
+
+        const controller = new AbortController();
+        currentController = controller;
+        const signal = controller.signal;
+
+        const requestBody = {
+            question: question,
+            doc_ids: Array.from(selectedDocIds),
+            session_id: sessionId
+        };
+        console.log('[Request] 发送请求，session_id:', sessionId);
+        try {
+            const resp = await fetch(`${API_BASE}/chat`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify(requestBody),
+                signal: signal
+            });
+            const data = await resp.json();
+            if (signal.aborted) return;
+            hideLoading();
+            if (data.code === 200) {
+                addMessage('assistant', data.answer, {
+                    fromCache: data.from_cache === true,
+                    source: data.source,
+                    sources: data.sources || []
+                });
+                if (data.session_id && data.session_id !== sessionId) {
+                    sessionId = data.session_id;
+                    localStorage.setItem('chat_session_id', sessionId);
+                    console.log('[Session] 更新会话ID:', sessionId);
+                }
+                fetchStats();
+            } else {
+                addMessage('assistant', `❌ 错误：${data.msg}`);
+            }
+        } catch (err) {
+            if (err.name === 'AbortError') return;
+            hideLoading();
+            console.error('[ask] 错误:', err);
+            addMessage('assistant', `请求失败：${err.message}`);
+        } finally {
+            if (currentController === controller) currentController = null;
+        }
+    }
+
+    // 事件绑定
+    uploadArea.addEventListener('click', () => fileInput.click());
+    uploadArea.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        uploadArea.style.borderColor = 'var(--accent-color)';
+    });
+    uploadArea.addEventListener('dragleave', () => {
+        uploadArea.style.borderColor = 'var(--input-border)';
+    });
+    uploadArea.addEventListener('drop', (e) => {
+        e.preventDefault();
+        uploadArea.style.borderColor = 'var(--input-border)';
+        const files = e.dataTransfer.files;
+        if (files.length) uploadFiles(files);
+        e.dataTransfer.clearData();
+    });
+    fileInput.addEventListener('change', (e) => {
+        if (e.target.files.length) uploadFiles(e.target.files);
+        fileInput.value = '';
+    });
+    sendBtn.addEventListener('click', () => askQuestion(questionInput.value));
+    questionInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') askQuestion(questionInput.value);
+    });
+    clearBtn.addEventListener('click', clearKnowledgeBase);
+
+    // 初始化
+    initTheme();
+    fetchStats();
+    loadCurrentModel();
+    fetchDocuments().then(() => selectAllDocs());
+    setInterval(loadCurrentModel, 30000);
+    setInterval(fetchDocuments, 30000);
+</script>
+</body>
+</html>

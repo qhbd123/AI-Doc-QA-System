@@ -1,0 +1,28 @@
+AI智能文档问答系统 - 配置与性能优化指南
+
+1. 环境变量配置
+系统通过 .env 文件管理敏感配置，支持以下关键参数：
+- 模型提供商：DEFAULT_MODEL_PROVIDER = doubao / deepseek / zhipu
+- API密钥：DOUBAO_API_KEY，DEEPSEEK_API_KEY，ZHIPU_API_KEY
+- Redis连接：REDIS_HOST，REDIS_PORT，REDIS_DB
+- 缓存过期时间：CACHE_EXPIRE（默认3600秒）
+- 缓存前缀：CACHE_PREFIX（默认 doc_qa:）
+- 文件上传限制：最大10MB，支持格式 .pdf, .docx, .txt
+
+2. 性能调优建议
+- 分块大小：max_chunk_size = 500 字符（可调整，过小影响语义，过大降低检索精度）
+- 检索片段数：top_k = 3（返回最相关的3个片段，平衡准确性与上下文长度）
+- 上下文最大长度：max_total_length = 1000 字符，避免超出大模型 token 限制
+- 并发锁：使用 asyncio.Lock 保护知识库写入，防止多请求同时修改导致数据错乱
+
+3. 常见问题排查
+- Redis连接失败：检查 .env 中配置是否正确，Redis 服务是否启动，防火墙是否放行端口。
+- 中文检索无结果：确认已安装 jieba 分词库，且文档包含与问题相同的关键词。
+- 大模型返回错误：检查 API Key 是否有效，账户余额是否充足，网络是否正常。
+- 缓存命中率低：检查 CACHE_EXPIRE 是否过短，或知识库频繁变更导致缓存被清除。
+
+4. 部署生产环境注意事项
+- 使用 Uvicorn 多 worker 模式：uvicorn main:app --workers 4
+- 将 Redis 配置为持久化（RDB或AOF），避免重启后缓存丢失
+- 日志级别可调整为 WARNING 或 ERROR，减少磁盘 I/O
+- 前端静态文件使用 Nginx 托管，提高并发能力
